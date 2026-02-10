@@ -1,0 +1,160 @@
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    /* Width handled by Framer Motion */
+    overflow: hidden;
+    position: relative;
+}
+
+
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.toggleButton {
+    background: transparent;
+    border: none;
+    color: var(--foreground);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.toggleButton:hover {
+    background: var(--glass-border);
+}
+
+.chatContainer {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.message {
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    max-width: 85%;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease;
+}
+
+.userMessage {
+    align-self: flex-end;
+    background: rgba(59, 130, 246, 0.2);
+    /* Primary transparent */
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: var(--foreground);
+    border-bottom-right-radius: 4px;
+}
+
+.aiMessage {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    color: var(--foreground);
+    border-bottom-left-radius: 4px;
+}
+
+.inputArea {
+    padding: 1rem;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    color: var(--foreground);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input:focus {
+    border-color: var(--primary);
+}
+
+.sendButton {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.sendButton:hover {
+    transform: scale(1.05);
+}
+
+.sendButton:disabled {
+    background: var(--secondary);
+    cursor: not-allowed;
+    transform: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.05) 25%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeletonText {
+    height: 1em;
+    width: 70%;
+    margin-bottom: 0.5em;
+}
+
+.skeletonText:last-child {
+    width: 40%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}

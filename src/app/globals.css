@@ -1,12 +1,28 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f0f4f8;
+  --foreground: #1a202c;
+  
+  /* Glassmorphism Variables */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  --glass-blur: 12px;
+  
+  /* Colors */
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #64748b;
+  --accent: #8b5cf6;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f172a;
+    --foreground: #f8fafc;
+    
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -14,12 +30,18 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  height: 100%;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Subtle gradient background to enhance glass effect */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+  background-attachment: fixed;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -35,8 +57,12 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Glassmorphic Utility Class */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
 }
