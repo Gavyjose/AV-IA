@@ -1,53 +1,57 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, ArrowRight, Github, Chrome, User, GraduationCap, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-
-type UserRole = 'student' | 'teacher' | 'admin';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
     const router = useRouter();
-    const [role, setRole] = useState<UserRole>('student');
+    const { signIn, userRole, user } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (user && userRole) {
+            redirectByRole(userRole);
+        }
+    }, [user, userRole]);
+
+    const redirectByRole = (role: 'admin' | 'teacher' | 'student') => {
+        switch (role) {
+            case 'admin':
+                router.push('/dashboard/admin');
+                break;
+            case 'teacher':
+                router.push('/dashboard/teacher');
+                break;
+            case 'student':
+            default:
+                router.push('/dashboard/student-home');
+                break;
+        }
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            if (email && password) {
-                setIsLoading(false);
-                // Redirect based on selected role
-                switch (role) {
-                    case 'admin':
-                        router.push('/dashboard/admin');
-                        break;
-                    case 'teacher':
-                        router.push('/dashboard/teacher');
-                        break;
-                    case 'student':
-                    default:
-                        router.push('/dashboard/student-home');
-                        break;
-                }
-            } else {
-                setError('Por favor completa todos los campos');
-                setIsLoading(false);
-            }
-        }, 1500);
-    };
+        console.log('Intentando login con:', email);
+        const { error: signInError } = await signIn(email, password);
 
-    const roleConfig = {
-        student: { icon: User, label: 'Estudiante', color: '#3b82f6' },
-        teacher: { icon: GraduationCap, label: 'Docente', color: '#8b5cf6' },
-        admin: { icon: ShieldCheck, label: 'Admin', color: '#ec4899' }
+        if (signInError) {
+            console.error('Error detallado de autenticación:', signInError);
+            setError(signInError.message || 'Credenciales inválidas');
+            setIsLoading(false);
+        } else {
+            console.log('Login exitoso, esperando redirección...');
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -82,45 +86,6 @@ export default function LoginPage() {
                     <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
                         Accede a tu Aula Virtual con IA
                     </p>
-                </div>
-
-                {/* Role Selector */}
-                <div style={{
-                    display: 'flex',
-                    background: 'rgba(255,255,255,0.05)',
-                    padding: '4px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--glass-border)'
-                }}>
-                    {(Object.keys(roleConfig) as UserRole[]).map((r) => {
-                        const isActive = role === r;
-                        const Icon = roleConfig[r].icon;
-                        return (
-                            <button
-                                key={r}
-                                onClick={() => setRole(r)}
-                                style={{
-                                    flex: 1,
-                                    background: isActive ? 'var(--glass-bg)' : 'transparent',
-                                    border: isActive ? '1px solid var(--glass-border)' : 'none',
-                                    borderRadius: '8px',
-                                    padding: '0.5rem',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    cursor: 'pointer',
-                                    color: isActive ? 'var(--foreground)' : 'var(--secondary)',
-                                    fontWeight: isActive ? 600 : 400,
-                                    transition: 'all 0.2s',
-                                    fontSize: '0.8rem'
-                                }}
-                            >
-                                <Icon size={18} color={isActive ? roleConfig[r].color : 'currentColor'} />
-                                {roleConfig[r].label}
-                            </button>
-                        )
-                    })}
                 </div>
 
                 <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -183,7 +148,7 @@ export default function LoginPage() {
                         type="submit"
                         disabled={isLoading}
                         style={{
-                            background: role === 'student' ? 'var(--primary)' : role === 'teacher' ? 'var(--accent)' : '#ec4899',
+                            background: 'var(--primary)',
                             color: 'white',
                             border: 'none',
                             padding: '0.8rem',
@@ -199,7 +164,7 @@ export default function LoginPage() {
                             opacity: isLoading ? 0.7 : 1
                         }}
                     >
-                        {isLoading ? 'Iniciando sesión...' : <>Ingresar como {roleConfig[role].label} <ArrowRight size={18} /></>}
+                        {isLoading ? 'Iniciando sesión...' : <>Ingresar a mi Aula Virtual <ArrowRight size={18} /></>}
                     </button>
                 </form>
 
