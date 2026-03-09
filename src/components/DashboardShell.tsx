@@ -1,18 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, LayoutGroup } from 'framer-motion';
-import AiSidebar from '@/components/AiSidebar';
+import React from 'react';
+import { motion } from 'framer-motion';
+import AiChatWidget from '@/components/AiChatWidget';
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
     return (
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', position: 'relative' }}>
-            {/* Main Content Area - Animates resizing */}
-            <motion.main
-                layout
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            {/* Main Content Area */}
+            <main
                 style={{
                     flex: 1,
                     padding: '2rem',
@@ -24,13 +20,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 }}
             >
                 {children}
-            </motion.main>
+            </main>
 
-            {/* Sidebar - Animates width and content */}
-            <AiSidebar
-                collapsed={isSidebarCollapsed}
-                onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            />
+            {/* Floating Chat Widget */}
+            <AiChatWidget />
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Users, Layers, Shield, Settings } from 'lucide-react';
+import { Users, Layers, Shield, Settings, Eye } from 'lucide-react';
 
 export default function AdminDashboard() {
     return (
@@ -9,19 +9,13 @@ export default function AdminDashboard() {
                 <p style={{ color: 'var(--secondary)' }}>Centro de Control Académico</p>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
                 {/* Control de Estudio Card */}
                 <Link href="/dashboard/admin/study-control" className="glass-panel" style={{
-                    padding: '2rem',
-                    display: 'flex', flexDirection: 'column', gap: '1.5rem',
-                    cursor: 'pointer', border: '1px solid var(--glass-border)',
-                    transition: 'transform 0.2s', position: 'relative', overflow: 'hidden'
+                    padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem',
+                    cursor: 'pointer', border: '1px solid var(--glass-border)', transition: 'transform 0.2s', position: 'relative', overflow: 'hidden'
                 }}>
-                    <div style={{
-                        position: 'absolute', top: -20, right: -20, width: 100, height: 100,
-                        background: 'linear-gradient(135deg, var(--primary), transparent)', opacity: 0.1, borderRadius: '50%'
-                    }} />
-
+                    <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, background: 'linear-gradient(135deg, var(--primary), transparent)', opacity: 0.1, borderRadius: '50%' }} />
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <div style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', borderRadius: '12px' }}>
                             <Users size={32} />
@@ -40,16 +34,10 @@ export default function AdminDashboard() {
 
                 {/* Gestión de Carreras Card */}
                 <Link href="/dashboard/admin/careers" className="glass-panel" style={{
-                    padding: '2rem',
-                    display: 'flex', flexDirection: 'column', gap: '1.5rem',
-                    cursor: 'pointer', border: '1px solid var(--glass-border)',
-                    transition: 'transform 0.2s', position: 'relative', overflow: 'hidden'
+                    padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem',
+                    cursor: 'pointer', border: '1px solid var(--glass-border)', transition: 'transform 0.2s', position: 'relative', overflow: 'hidden'
                 }}>
-                    <div style={{
-                        position: 'absolute', top: -20, right: -20, width: 100, height: 100,
-                        background: 'linear-gradient(135deg, var(--accent), transparent)', opacity: 0.1, borderRadius: '50%'
-                    }} />
-
+                    <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, background: 'linear-gradient(135deg, var(--accent), transparent)', opacity: 0.1, borderRadius: '50%' }} />
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <div style={{ padding: '1rem', background: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', borderRadius: '12px' }}>
                             <Layers size={32} />
@@ -63,6 +51,28 @@ export default function AdminDashboard() {
                         <li>Configuración de Pensum</li>
                         <li>Catálogo de Materias</li>
                         <li>Definición de Períodos</li>
+                    </ul>
+                </Link>
+
+                {/* Vista de Roles Card (NEW) */}
+                <Link href="/dashboard/admin/preview-roles" className="glass-panel" style={{
+                    padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem',
+                    cursor: 'pointer', border: '1px solid var(--glass-border)', transition: 'transform 0.2s', position: 'relative', overflow: 'hidden'
+                }}>
+                    <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, background: 'linear-gradient(135deg, #22c55e, transparent)', opacity: 0.1, borderRadius: '50%' }} />
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <div style={{ padding: '1rem', background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', borderRadius: '12px' }}>
+                            <Eye size={32} />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Vista de Roles</h2>
+                            <p style={{ color: 'var(--secondary)' }}>Previsualizar paneles sin cambiar sesión</p>
+                        </div>
+                    </div>
+                    <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: 'var(--secondary)', lineHeight: '1.6' }}>
+                        <li>Vista del Panel de Estudiante</li>
+                        <li>Vista del Panel del Docente</li>
+                        <li>Sin cambiar de cuenta</li>
                     </ul>
                 </Link>
             </div>
