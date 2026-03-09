@@ -1,72 +1,140 @@
-# Aula Virtual IA (AV-IA)
+# Aula Virtual IA (AV-IA) 🚀
 
-Este es un proyecto de [Next.js](https://nextjs.org) creado con [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Sistema de Aula Virtual inteligente con integración RAG (Retrieval-Augmented Generation) utilizando modelos de IA Open Source a través de Groq y almacenamiento vectorial en Supabase.
 
-## 🚀 Cómo Empezar
+## 📋 Prerrequisitos
 
-### Prerrequisitos
+- **Node.js**: Versión 18.x o superior.
+- **Supabase Account**: Para la base de datos y búsqueda vectorial.
+- **Groq API Key**: Para el motor de inferencia Llama 3.
 
-Necesitarás tener instalado Node.js en tu sistema.
+---
 
-### Clonar el Repositorio
+## 🛠️ Configuración de la Base de Datos (Supabase)
 
-Para obtener una copia local del proyecto y ponerlo en marcha, sigue estos pasos:
+Para que el sistema de IA funcione, debes configurar Supabase con soporte para vectores:
 
-1. Clona el repositorio:
-```bash
-git clone https://github.com/Gavyjose/AV-IA.git
+### 1. Habilitar pgvector
+Entra al Editor SQL de tu proyecto en Supabase y ejecuta:
+```sql
+create extension if not exists vector;
 ```
 
-2. Entra en el directorio del proyecto:
-```bash
-cd AV-IA
+### 2. Crear Tablas de Documentos
+Ejecuta el siguiente script para crear las tablas necesarias para la IA:
+
+```sql
+-- Tabla principal de documentos
+create table documents (
+  id bigint generated share as identity primary key,
+  name text not null,
+  storage_path text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Secciones vectorizadas de los documentos
+create table document_sections (
+  id bigint generated share as identity primary key,
+  document_id bigint references documents(id) on delete cascade,
+  content text not null,
+  embedding vector(384), -- Usando All-MiniLM-L6-v2 (384 dimensiones)
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Logs de chat para analíticas
+create table chat_logs (
+  id bigint generated share as identity primary key,
+  user_query text not null,
+  ai_response text not null,
+  liked boolean,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 ```
 
-3. Instala las dependencias:
-```bash
-npm install
-# o
-yarn install
-# o
-pnpm install
-# o
-bun install
+### 3. Crear Función de Búsqueda Vectorial
+Ejecuta esto para habilitar la búsqueda por similitud de coseno:
+
+```sql
+create or replace function match_document_sections (
+  query_embedding vector(384),
+  match_threshold float,
+  match_count int
+)
+returns table (
+  id bigint,
+  document_id bigint,
+  content text,
+  similarity float
+)
+language plpgsql
+as $$
+begin
+  return query
+  select
+    document_sections.id,
+    document_sections.document_id,
+    document_sections.content,
+    1 - (document_sections.embedding <=> query_embedding) as similarity
+  from document_sections
+  where 1 - (document_sections.embedding <=> query_embedding) > match_threshold
+  order by document_sections.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;
 ```
 
-4. Configura las variables de entorno:
-Copia el archivo `.env.example` (si existe) a `.env.local` y configura tus credenciales de Supabase.
+---
 
-### Iniciar el Servidor de Desarrollo
+## 🔑 Variables de Entorno
 
-Una vez instaladas las dependencias, inicia el servidor de desarrollo:
+Crea un archivo `.env.local` en la raíz del proyecto con el siguiente contenido:
 
-```bash
-npm run dev
-# o
-yarn dev
-# o
-pnpm dev
-# o
-bun dev
+```env
+# Supabase (Public)
+NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+
+# Supabase (Server Side - CRITICAL: No compartir)
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+
+# Groq (Motor IA)
+GROQ_API_KEY=tu_gsk_xxx_key
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver el resultado.
+---
 
-Puedes empezar a editar la página modificando `src/app/page.tsx`. La página se actualizará automáticamente mientras editas el archivo.
+## 🧠 Entrenamiento y Configuración de IA
 
-Este proyecto utiliza [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) para optimizar automáticamente y cargar [Geist](https://vercel.com/font), la nueva familia tipográfica de Vercel.
+El "entrenamiento" en este sistema se realiza mediante la ingesta de documentos (RAG).
 
-## 📚 Aprende Más
+1. **Acceso**: Inicia sesión como administrador y ve a `/dashboard/ai-admin`.
+2. **Carga**: Sube archivos de texto o pega contenido directamente.
+3. **Procesamiento**: El sistema dividirá el texto en fragmentos (chunks) y generará embeddings de forma local usando `Transformers.js`.
+4. **Almacenamiento**: Los vectores se guardarán en Supabase para que el asistente pueda consultarlos en tiempo real.
 
-Para aprender más sobre Next.js, revisa los siguientes recursos:
+---
 
-- [Documentación de Next.js](https://nextjs.org/docs) - aprende sobre las características y la API de Next.js.
-- [Aprende Next.js](https://nextjs.org/learn) - un tutorial interactivo de Next.js.
+## 🚀 Ejecución Local
 
-Puedes visitar [el repositorio de GitHub de Next.js](https://github.com/vercel/next.js) - ¡tus comentarios y contribuciones son bienvenidos!
+1. Instala dependencias:
+   ```bash
+   npm install
+   ```
 
-## ☁️ Desplegar en Vercel
+2. Inicia el modo desarrollo:
+   ```bash
+   npm run dev
+   ```
 
-La forma más fácil de desplegar tu aplicación de Next.js es utilizando la [Plataforma de Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) de los creadores de Next.js.
+3. Abre [http://localhost:3000](http://localhost:3000).
 
-Revisa nuestra [documentación de despliegue de Next.js](https://nextjs.org/docs/app/building-your-application/deploying) para más detalles.
+---
+
+## 👥 Vistas Disponibles
+
+- **Estudiante**: Acceso al aula virtual y chat de asistencia.
+- **Docente**: Gestión de clases y **Panel de Analíticas de IA** para ver dudas de alumnos.
+- **Administrador**: Gestión global y **Vista Previa de Roles** para testear interfaces.
+
+---
+© 2024 AV-IA - Sistema de Aula Virtual Inteligente.
