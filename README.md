@@ -46,21 +46,22 @@ create extension if not exists vector;
 
 #### B. Crear tablas del sistema:
 ```sql
--- Tabla de documentos cargados
+-- Tabla principal de documentos
 create table documents (
   id bigint generated always as identity primary key,
-  name text not null,
-  storage_path text,
-  created_at timestamp with time zone default now() not null
+  title text not null,
+  content text not null,
+  metadata jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Tabla de secciones vectorizadas (Cerebro de la IA)
+-- Secciones vectorizadas de los documentos
 create table document_sections (
   id bigint generated always as identity primary key,
   document_id bigint references documents(id) on delete cascade,
   content text not null,
-  embedding vector(384), -- Tamaño para el modelo all-MiniLM-L6-v2
-  created_at timestamp with time zone default now() not null
+  embedding vector(384), -- Usando All-MiniLM-L6-v2 (384 dimensiones)
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 -- Tabla de registro de consultas (Analíticas)

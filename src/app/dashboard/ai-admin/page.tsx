@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Database } from 'lucide-react';
+import { Upload, Database, BookOpen, Sparkles, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AiAdminPage() {
     const [title, setTitle] = useState('');
+    const [subject, setSubject] = useState('');
     const [content, setContent] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
@@ -18,23 +20,31 @@ export default function AiAdminPage() {
             const res = await fetch('/api/ingest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, content, metadata: { source: 'admin_upload' } }),
+                body: JSON.stringify({ 
+                    title, 
+                    content, 
+                    metadata: { 
+                        source: 'teacher_upload',
+                        subject: subject 
+                    } 
+                }),
             });
 
             const data = await res.json();
 
-            if (!res.ok) throw new Error(data.error || 'Failed to ingest document');
+            if (!res.ok) throw new Error(data.error || 'Error al procesar el documento');
 
             setStatus({
                 type: 'success',
-                message: `Documento "${title}" procesado correctamente. Creados ${data.chunksProcessed} fragmentos vectoriales.`,
+                message: `¡Excelente! El material de "${subject}" ha sido integrado. Se crearon ${data.chunksProcessed} fragmentos de memoria.`,
             });
             setTitle('');
+            setSubject('');
             setContent('');
         } catch (error: any) {
             setStatus({
                 type: 'error',
-                message: error.message || 'Error desconocido',
+                message: error.message || 'Ocurrió un error inesperado durante el procesamiento.',
             });
         } finally {
             setIsLoading(false);
@@ -42,80 +52,223 @@ export default function AiAdminPage() {
     };
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
-            <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.5rem', marginBottom: '1.5rem', color: '#1e293b' }}>
-                <Database size={24} />
-                Gestión de Conocimiento IA
-            </h1>
-            <p style={{ color: '#64748b', marginBottom: '2rem' }}>
-                Sube guías, PDFs o texto que quieras que el Asistente Virtual lea y entienda. El sistema extraerá el texto, lo convertirá a matemáticamente (vectores) y lo guardará en la memoria.
-            </p>
-
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                <div>
-                    <label htmlFor="title" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, color: '#334155' }}>
-                        Título del Documento o Materia
-                    </label>
-                    <input
-                        id="title"
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }}
-                        placeholder="Ej. Guía de Álgebra Lineal - Semestre 1"
-                    />
-                </div>
-
-                <div>
-                    <label htmlFor="content" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, color: '#334155' }}>
-                        Contenido del Texto (Extrae el PDF y pega el texto aquí)
-                    </label>
-                    <textarea
-                        id="content"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        required
-                        rows={10}
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', resize: 'vertical' }}
-                        placeholder="Pega aquí todo el texto de la clase, guía o temario..."
-                    />
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        background: isLoading ? '#94a3b8' : '#2563eb',
+        <div style={{ 
+            maxWidth: '900px', 
+            margin: '0 auto', 
+            width: '100%',
+            padding: '2rem',
+            animation: 'fadeIn 0.5s ease-out'
+        }}>
+            {/* Header */}
+            <header style={{ marginBottom: '3rem' }}>
+                <Link href="/dashboard/teacher" style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    color: 'var(--secondary)', 
+                    textDecoration: 'none',
+                    fontSize: '0.9rem',
+                    marginBottom: '1rem',
+                    width: 'fit-content'
+                }}>
+                    <ArrowLeft size={16} /> Volver al Panel
+                </Link>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1rem' }}>
+                    <div style={{ 
+                        background: 'linear-gradient(135deg, var(--primary) 0%, #22c55e 100%)',
+                        padding: '12px',
+                        borderRadius: '16px',
                         color: 'white',
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '8px',
-                        border: 'none',
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
-                        fontWeight: 600,
-                        transition: 'background 0.2s',
-                    }}
-                >
-                    <Upload size={18} />
-                    {isLoading ? 'Procesando Vectores...' : 'Subir y Entrenar Memoria'}
-                </button>
-
-                {status.type && (
-                    <div style={{
-                        padding: '1rem',
-                        borderRadius: '8px',
-                        backgroundColor: status.type === 'success' ? '#dcfce7' : '#fee2e2',
-                        color: status.type === 'success' ? '#166534' : '#991b1b',
-                        border: `1px solid ${status.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+                        boxShadow: '0 10px 20px rgba(59, 130, 246, 0.2)'
                     }}>
-                        {status.message}
+                        <Database size={28} />
                     </div>
-                )}
-            </form>
+                    <div>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em' }}>
+                            Alimentar <span style={{ color: 'var(--primary)' }}>Cerebro IA</span>
+                        </h1>
+                        <p style={{ color: 'var(--secondary)', fontSize: '1.1rem' }}>Entrena al asistente con el material de tus materias</p>
+                    </div>
+                </div>
+            </header>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+                <section className="glass-panel" style={{ padding: '2.5rem', border: '1px solid var(--glass-border)' }}>
+                    <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'flex-start', gap: '12px', background: 'rgba(59, 130, 246, 0.05)', padding: '1.25rem', borderRadius: '12px', borderLeft: '4px solid var(--primary)' }}>
+                        <Sparkles size={20} color="var(--primary)" style={{ marginTop: '3px', flexShrink: 0 }} />
+                        <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>
+                            La IA utilizará este contenido para responder dudas de tus alumnos. Puedes pegar guías de estudio, temarios, transcripciones de clases o preguntas frecuentes.
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--secondary)' }}>
+                                    MATERIA / CURSO
+                                </label>
+                                <div style={{ position: 'relative' }}>
+                                    <BookOpen size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--secondary)' }} />
+                                    <input
+                                        type="text"
+                                        value={subject}
+                                        onChange={(e) => setSubject(e.target.value)}
+                                        required
+                                        placeholder="Ej: Programación II"
+                                        style={{ 
+                                            width: '100%', 
+                                            padding: '0.85rem 1rem 0.85rem 2.5rem', 
+                                            borderRadius: '12px', 
+                                            background: 'rgba(255,255,255,0.05)', 
+                                            border: '1px solid var(--glass-border)',
+                                            color: 'white',
+                                            outline: 'none',
+                                            transition: 'border-color 0.2s'
+                                        }}
+                                        className="input-focus"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--secondary)' }}>
+                                    TÍTULO DEL RECURSO
+                                </label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    required
+                                    placeholder="Ej: Guía de Algoritmos"
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '0.85rem 1rem', 
+                                        borderRadius: '12px', 
+                                        background: 'rgba(255,255,255,0.05)', 
+                                        border: '1px solid var(--glass-border)',
+                                        color: 'white',
+                                        outline: 'none'
+                                    }}
+                                    className="input-focus"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--secondary)' }}>
+                                CONTENIDO DIDÁCTICO
+                            </label>
+                            <textarea
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                required
+                                rows={10}
+                                placeholder="Pega aquí el contenido que la IA debe aprender para este curso..."
+                                style={{ 
+                                    width: '100%', 
+                                    padding: '1.25rem', 
+                                    borderRadius: '16px', 
+                                    background: 'rgba(255,255,255,0.03)', 
+                                    border: '1px solid var(--glass-border)',
+                                    color: 'white',
+                                    outline: 'none',
+                                    resize: 'vertical',
+                                    minHeight: '200px',
+                                    fontSize: '1rem',
+                                    lineHeight: '1.6'
+                                }}
+                                className="input-focus"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '10px',
+                                background: isLoading ? 'rgba(255,255,255,0.1)' : 'var(--primary)',
+                                color: 'white',
+                                padding: '1.25rem',
+                                borderRadius: '16px',
+                                border: 'none',
+                                cursor: isLoading ? 'not-allowed' : 'pointer',
+                                fontWeight: 700,
+                                fontSize: '1.1rem',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                marginTop: '1rem',
+                                boxShadow: isLoading ? 'none' : '0 10px 30px rgba(59, 130, 246, 0.3)'
+                            }}
+                            className="btn-glow"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <div className="spinner" />
+                                    Generando Vectores...
+                                </>
+                            ) : (
+                                <>
+                                    <Upload size={22} />
+                                    Ingestar Conocimiento
+                                </>
+                            )}
+                        </button>
+
+                        {status.type && (
+                            <div style={{
+                                marginTop: '1.5rem',
+                                padding: '1.5rem',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                background: status.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                border: `1px solid ${status.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+                                color: status.type === 'success' ? '#4ade80' : '#f87171',
+                                animation: 'slideUp 0.3s ease-out'
+                            }}>
+                                {status.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+                                <span style={{ fontWeight: 500 }}>{status.message}</span>
+                            </div>
+                        )}
+                    </form>
+                </section>
+            </div>
+
+            <style jsx>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes slideUp {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .input-focus:focus {
+                    border-color: var(--primary) !important;
+                    background: rgba(255,255,255,0.08) !important;
+                }
+                .btn-glow:hover:not(:disabled) {
+                    transform: translateY(-2px);
+                    background: #2563eb;
+                    box-shadow: 0 15px 40px rgba(59, 130, 246, 0.5);
+                }
+                .btn-glow:active:not(:disabled) {
+                    transform: translateY(0);
+                }
+                .spinner {
+                    width: 20px;
+                    height: 20px;
+                    border: 3px solid rgba(255,255,255,0.2);
+                    border-radius: 50%;
+                    border-top-color: white;
+                    animation: spin 0.8s linear infinite;
+                }
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
         </div>
     );
 }
