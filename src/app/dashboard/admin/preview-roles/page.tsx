@@ -42,26 +42,38 @@ function TeacherView() {
             </header>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
-                <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid var(--primary)' }}>
-                    <div style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', padding: '12px', borderRadius: '12px', width: 'fit-content' }}>
-                        <BookOpen size={28} />
+                <Link href="/dashboard/teacher/courses" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div className="glass-panel card-hover" style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid var(--primary)', cursor: 'pointer', transition: 'all 0.2s' }}>
+                        <div style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', padding: '12px', borderRadius: '12px', width: 'fit-content' }}>
+                            <BookOpen size={28} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem' }}>Gestión de Cursos</h3>
+                            <p style={{ color: 'var(--secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>Crea materias, invita alumnos y sube materiales de estudio para la IA.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem' }}>Gestión de Cursos</h3>
-                        <p style={{ color: 'var(--secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>Crea materias, invita alumnos y sube materiales de estudio para la IA.</p>
-                    </div>
-                </div>
+                </Link>
 
-                <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
-                    <div style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', padding: '12px', borderRadius: '12px', width: 'fit-content' }}>
-                        <BarChart size={28} />
+                <Link href="/dashboard/ai-analytics" style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div className="glass-panel card-hover" style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(34, 197, 94, 0.3)', cursor: 'pointer', transition: 'all 0.2s' }}>
+                        <div style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', padding: '12px', borderRadius: '12px', width: 'fit-content' }}>
+                            <BarChart size={28} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem' }}>Analíticas de IA</h3>
+                            <p style={{ color: 'var(--secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>Ver qué preguntan tus alumnos y su satisfacción.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem' }}>Analíticas de IA</h3>
-                        <p style={{ color: 'var(--secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>Ver qué preguntan tus alumnos y su satisfacción.</p>
-                    </div>
-                </div>
+                </Link>
             </div>
+
+            <style jsx>{`
+                .card-hover:hover {
+                    transform: translateY(-5px);
+                    background: rgba(255,255,255,0.05);
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                }
+            `}</style>
 
             <section className="glass-panel" style={{ padding: '2rem' }}>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Clases Recientes</h3>
