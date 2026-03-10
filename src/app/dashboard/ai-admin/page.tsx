@@ -1,31 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { Upload, Database, BookOpen, Sparkles, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AiAdminPage() {
     const [title, setTitle] = useState('');
-    const [subject, setSubject] = useState('');
+    const [courseId, setCourseId] = useState('');
+    const [courses, setCourses] = useState<{id: string, name: string}[]>([]);
     const [content, setContent] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
 
+    const supabase = createClient();
+
+    useEffect(() => {
+        async function fetchCourses() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('courses').select('id, name').eq('teacher_id', user.id);
+                if (data) setCourses(data);
+            }
+        }
+        fetchCourses();
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!courseId) {
+            setStatus({ type: 'error', message: 'Por favor selecciona un curso.' });
+            return;
+        }
         setIsLoading(true);
         setStatus({ type: null, message: '' });
 
         try {
+            const selectedCourse = courses.find(c => c.id === courseId);
             const res = await fetch('/api/ingest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     title, 
                     content, 
+                    course_id: courseId,
                     metadata: { 
                         source: 'teacher_upload',
-                        subject: subject 
+                        subject: selectedCourse?.name 
                     } 
                 }),
             });
@@ -36,10 +57,10 @@ export default function AiAdminPage() {
 
             setStatus({
                 type: 'success',
-                message: `¡Excelente! El material de "${subject}" ha sido integrado. Se crearon ${data.chunksProcessed} fragmentos de memoria.`,
+                message: `¡Excelente! El material ha sido integrado al curso. Se crearon ${data.chunksProcessed} fragmentos de memoria.`,
             });
             setTitle('');
-            setSubject('');
+            setCourseId('');
             setContent('');
         } catch (error: any) {
             setStatus({
@@ -87,7 +108,7 @@ export default function AiAdminPage() {
                         <h1 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em' }}>
                             Alimentar <span style={{ color: 'var(--primary)' }}>Cerebro IA</span>
                         </h1>
-                        <p style={{ color: 'var(--secondary)', fontSize: '1.1rem' }}>Entrena al asistente con el material de tus materias</p>
+                        <p style={{ color: 'var(--secondary)', fontSize: '1.1rem' }}>Sube material educativo segmentado por curso</p>
                     </div>
                 </div>
             </header>
@@ -97,7 +118,7 @@ export default function AiAdminPage() {
                     <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'flex-start', gap: '12px', background: 'rgba(59, 130, 246, 0.05)', padding: '1.25rem', borderRadius: '12px', borderLeft: '4px solid var(--primary)' }}>
                         <Sparkles size={20} color="var(--primary)" style={{ marginTop: '3px', flexShrink: 0 }} />
                         <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>
-                            La IA utilizará este contenido para responder dudas de tus alumnos. Puedes pegar guías de estudio, temarios, transcripciones de clases o preguntas frecuentes.
+                            La IA utilizará este contenido para responder dudas de tus alumnos según el curso asignado.
                         </p>
                     </div>
 
@@ -109,12 +130,10 @@ export default function AiAdminPage() {
                                 </label>
                                 <div style={{ position: 'relative' }}>
                                     <BookOpen size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--secondary)' }} />
-                                    <input
-                                        type="text"
-                                        value={subject}
-                                        onChange={(e) => setSubject(e.target.value)}
+                                    <select
+                                        value={courseId}
+                                        onChange={(e) => setCourseId(e.target.value)}
                                         required
-                                        placeholder="Ej: Programación II"
                                         style={{ 
                                             width: '100%', 
                                             padding: '0.85rem 1rem 0.85rem 2.5rem', 
@@ -123,10 +142,16 @@ export default function AiAdminPage() {
                                             border: '1px solid var(--glass-border)',
                                             color: 'white',
                                             outline: 'none',
-                                            transition: 'border-color 0.2s'
+                                            appearance: 'none',
+                                            cursor: 'pointer'
                                         }}
                                         className="input-focus"
-                                    />
+                                    >
+                                        <option value="" style={{ background: '#0f172a' }}>Selecciona un curso...</option>
+                                        {courses.map(course => (
+                                            <option key={course.id} value={course.id} style={{ background: '#0f172a' }}>{course.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
                             <div>

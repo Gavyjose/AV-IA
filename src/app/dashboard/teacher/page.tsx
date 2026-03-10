@@ -15,7 +15,20 @@ export default function TeacherDashboard() {
                 </div>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+            {/* Action Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
+                <Link href="/dashboard/teacher/courses" style={{ textDecoration: 'none' }}>
+                    <div className="glass-panel card-hover" style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid var(--glass-border)' }}>
+                        <div style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', padding: '12px', borderRadius: '12px', width: 'fit-content' }}>
+                            <BookOpen size={28} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem', color: 'white' }}>Gestión de Cursos</h3>
+                            <p style={{ color: 'var(--secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>Crea materias, invita alumnos y sube materiales de estudio para la IA.</p>
+                        </div>
+                    </div>
+                </Link>
+
                 {[
                     { icon: <Upload size={24} />, title: "Subir Recursos", desc: "Añadir material para el entrenamiento de la IA", href: "/dashboard/ai-admin", color: "var(--primary)" },
                     { icon: <MessageSquare size={24} />, title: "Analíticas de IA", desc: "Ver qué preguntan tus alumnos y su satisfacción", href: "/dashboard/ai-analytics", color: "#22c55e", highlight: true },

@@ -44,6 +44,84 @@ export interface Database {
                     updated_at?: string
                 }
             }
+            courses: {
+                Row: {
+                    id: string
+                    name: string
+                    code: string
+                    description: string | null
+                    teacher_id: string
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    name: string
+                    code: string
+                    description?: string | null
+                    teacher_id: string
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    name?: string
+                    code?: string
+                    description?: string | null
+                    teacher_id?: string
+                    created_at?: string
+                    updated_at?: string
+                }
+            },
+            enrollments: {
+                Row: {
+                    id: string
+                    course_id: string
+                    student_email: string
+                    status: 'invited' | 'active'
+                    enrolled_at: string
+                }
+                Insert: {
+                    id?: string
+                    course_id: string
+                    student_email: string
+                    status: 'invited' | 'active'
+                    enrolled_at?: string
+                }
+                Update: {
+                    id?: string
+                    course_id?: string
+                    student_email?: string
+                    status?: 'invited' | 'active'
+                    enrolled_at?: string
+                }
+            },
+            documents: {
+                Row: {
+                    id: number
+                    title: string
+                    content: string
+                    metadata: Json | null
+                    course_id: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: number
+                    title: string
+                    content: string
+                    metadata?: Json | null
+                    course_id?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: number
+                    title?: string
+                    content?: string
+                    metadata?: Json | null
+                    course_id?: string | null
+                    created_at?: string
+                }
+            },
             student_profiles: {
                 Row: {
                     id: string
