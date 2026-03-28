@@ -28,15 +28,34 @@ export default function TeacherCoursesPage() {
 
     async function fetchCourses() {
         setIsLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const { data, error } = await supabase
-                .from('courses')
-                .select('*')
-                .eq('teacher_id', user.id)
-                .order('created_at', { ascending: false });
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            console.log('Fetching courses for user:', user?.id);
             
-            if (!error && data) setCourses(data);
+            if (user) {
+                const { data, error } = await (supabase
+                    .from('courses') as any)
+                    .select('*')
+                    .eq('teacher_id', user.id)
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Supabase fetch error:', {
+                        message: error.message,
+                        details: error.details,
+                        hint: error.hint,
+                        code: error.code
+                    });
+                    // Mostrar alerta solo si hay un error real (no un objeto vacío)
+                    if (error.message) {
+                        alert('Error al cargar cursos: ' + error.message + '\nCódigo: ' + error.code);
+                    }
+                } else if (data) {
+                    setCourses(data);
+                }
+            }
+        } catch (err) {
+            console.error('Unexpected error in fetchCourses:', err);
         }
         setIsLoading(false);
     }
@@ -44,27 +63,89 @@ export default function TeacherCoursesPage() {
     async function handleCreateCourse(e: React.FormEvent) {
         e.preventDefault();
         setIsCreating(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-            const { error } = await supabase.from('courses').insert({
-                ...newCourse,
+        console.log('Attempting to create course:', newCourse);
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                alert('No se detectó sesión activa. Por favor, inicia sesión.');
+                setIsCreating(false);
+                return;
+            }
+
+            console.log('Inserting course for teacher:', user.id);
+
+            const { data, error } = await (supabase.from('courses') as any).insert({
+                name: newCourse.name,
+                code: newCourse.code,
+                description: newCourse.description,
                 teacher_id: user.id
-            });
+            }).select();
 
             if (!error) {
+                console.log('Course created successfully:', data);
                 setIsModalOpen(false);
                 setNewCourse({ name: '', code: '', description: '' });
                 fetchCourses();
             } else {
-                alert('Error al crear el curso: ' + error.message);
+                console.error('Supabase error creating course:', error);
+                alert('Error al crear el curso: ' + error.message + '\n\nDetalle: ' + (error.details || 'Revisa los permisos de tu usuario.'));
             }
+        } catch (err: any) {
+            console.error('Unexpected error creating course:', err);
+            alert('Ocurrió un error inesperado: ' + err.message);
         }
         setIsCreating(false);
     }
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '2rem', animation: 'fadeIn 0.5s ease-out' }}>
+            {/* Diagnostic Console (Only visible if there are issues) */}
+            {(courses.length === 0 && !isLoading) && (
+                <div style={{ 
+                    background: 'rgba(239, 68, 68, 0.1)', 
+                    border: '1px solid rgba(239, 68, 68, 0.2)', 
+                    borderRadius: '12px', 
+                    padding: '1.5rem', 
+                    marginBottom: '2rem',
+                    color: '#ef4444'
+                }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <Layout size={20} /> Diagnóstico de Conexión
+                    </h3>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>
+                        Si no ves tus cursos, asegúrate de haber ejecutado el SQL en Supabase.
+                    </p>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button 
+                            onClick={() => fetchCourses()}
+                            style={{ 
+                                background: '#ef4444', color: 'white', border: 'none', 
+                                padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer',
+                                fontSize: '0.85rem', fontWeight: 600
+                            }}
+                        >
+                            Reintentar Conexión
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                const { data: { user } } = await supabase.auth.getUser();
+                                const { data, error } = await supabase.from('courses').select('count', { count: 'exact' });
+                                alert(`Sesión: ${user ? 'Activa (' + user.email + ')' : 'Inactiva'}\nTabla Courses: ${error ? 'Error: ' + error.message : 'OK (' + data.length + ' cursos encontrados)'}`);
+                            }}
+                            style={{ 
+                                background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', 
+                                padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer',
+                                fontSize: '0.85rem'
+                            }}
+                        >
+                            Verificar Tabla y Sesión
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <header style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.025em', marginBottom: '0.5rem' }}>

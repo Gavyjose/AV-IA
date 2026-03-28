@@ -13,7 +13,10 @@ import {
     CheckCircle2, 
     Clock, 
     Upload,
-    Sparkles
+    Sparkles,
+    Trash2,
+    UserPlus,
+    FileUp
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -75,19 +78,57 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         if (!inviteEmail) return;
         setIsInviting(true);
 
-        const { error } = await supabase.from('enrollments').insert({
+        // Intenta insertar o actualizar (upsert) para permitir reenvíos
+        const { error } = await (supabase.from('enrollments') as any).upsert({
             course_id: courseId,
             student_email: inviteEmail,
             status: 'invited'
+        }, { 
+            onConflict: 'course_id,student_email' 
         });
 
-        if (!error) {
+        if (!error || error.code === '23505') { // Si no hay error o es duplicado, enviamos email
+            // Send email invitation
+            try {
+                const res = await fetch('/api/invite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: inviteEmail,
+                        courseId: courseId,
+                        courseName: course?.name || 'Materia Nueva'
+                    }),
+                });
+                
+                const data = await res.json();
+                if (!res.ok) {
+                    alert('Email no enviado: ' + (data.details?.message || data.error));
+                }
+            } catch (emailErr) {
+                console.error('Error enviando email:', emailErr);
+            }
+
             setInviteEmail('');
             fetchCourseData();
         } else {
             alert('Error al invitar: ' + error.message);
         }
         setIsInviting(false);
+    }
+
+    async function handleDeleteEnrollment(id: string) {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta invitación?')) return;
+        
+        const { error } = await supabase
+            .from('enrollments')
+            .delete()
+            .eq('id', id);
+
+        if (!error) {
+            fetchCourseData();
+        } else {
+            alert('Error al eliminar: ' + error.message);
+        }
     }
 
     if (isLoading) return <div style={{ padding: '5rem', textAlign: 'center' }}><div className="spinner" /></div>;
@@ -162,32 +203,142 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                 {activeTab === 'students' && (
                     <div className="tab-content fadeIn">
                         <section className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', background: 'rgba(255,255,255,0.02)' }}>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Mail size={20} color="var(--primary)" /> Invitar Estudiante
-                            </h3>
-                            <form onSubmit={handleInvite} style={{ display: 'flex', gap: '1rem' }}>
-                                <input 
-                                    required
-                                    type="email"
-                                    placeholder="correo@ejemplo.com"
-                                    value={inviteEmail}
-                                    onChange={e => setInviteEmail(e.target.value)}
-                                    style={{ flex: 1, padding: '1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
-                                />
-                                <button 
-                                    disabled={isInviting}
-                                    style={{ padding: '1rem 2rem', borderRadius: '12px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
-                                >
-                                    {isInviting ? <div className="spinner-small" /> : <Plus size={20} />} Invitar Alumno
-                                </button>
-                            </form>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '3rem' }}>
+                                {/* Manual Invite Form */}
+                                <div>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <UserPlus size={20} color="var(--primary)" /> Invitación Individual
+                                    </h3>
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        const formData = new FormData(e.currentTarget);
+                                        const studentData = {
+                                            firstName: formData.get('firstName') as string,
+                                            lastName: formData.get('lastName') as string,
+                                            idNumber: formData.get('idNumber') as string,
+                                            email: formData.get('email') as string,
+                                            courseId: courseId,
+                                            courseName: course?.name
+                                        };
+
+                                        if (!studentData.email || !studentData.idNumber) return;
+                                        setIsInviting(true);
+
+                                        try {
+                                            const res = await fetch('/api/students/invite', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(studentData)
+                                            });
+                                            const data = await res.json();
+                                            if (res.ok) {
+                                                alert('¡Estudiante invitado con éxito!');
+                                                (e.target as HTMLFormElement).reset();
+                                                fetchCourseData();
+                                            } else {
+                                                alert('Error: ' + data.error);
+                                            }
+                                        } catch (err) {
+                                            alert('Error de conexión');
+                                        } finally {
+                                            setIsInviting(false);
+                                        }
+                                    }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <input required name="firstName" placeholder="Nombres" style={{ padding: '0.9rem', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
+                                        <input required name="lastName" placeholder="Apellidos" style={{ padding: '0.9rem', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
+                                        <input required name="idNumber" placeholder="Cédula (Solo números)" style={{ padding: '0.9rem', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
+                                        <input required name="email" type="email" placeholder="Correo Electrónico" style={{ padding: '0.9rem', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
+                                        
+                                        <button 
+                                            disabled={isInviting}
+                                            style={{ 
+                                                gridColumn: 'span 2',
+                                                padding: '1rem', 
+                                                borderRadius: '10px', 
+                                                background: 'var(--primary)', 
+                                                color: 'white', 
+                                                border: 'none', 
+                                                fontWeight: 700, 
+                                                cursor: 'pointer', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                gap: '10px' 
+                                            }}
+                                        >
+                                            {isInviting ? <div className="spinner-small" /> : <Plus size={20} />} Registrar e Invitar
+                                        </button>
+                                    </form>
+                                </div>
+
+                                {/* Batch Upload Section */}
+                                <div style={{ borderLeft: '1px solid var(--glass-border)', paddingLeft: '3rem' }}>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Users size={20} color="var(--primary)" /> Carga por Lotes (IA)
+                                    </h3>
+                                    <div 
+                                        style={{ 
+                                            border: '2px dashed var(--glass-border)', 
+                                            borderRadius: '16px', 
+                                            padding: '2.5rem', 
+                                            textAlign: 'center',
+                                            background: 'rgba(255,255,255,0.01)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onClick={() => document.getElementById('batchInviteInput')?.click()}
+                                    >
+                                        <FileUp size={32} color="var(--secondary)" style={{ marginBottom: '1rem' }} />
+                                        <p style={{ margin: 0, fontWeight: 600 }}>Sube tu lista de alumnos</p>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '8px' }}>PDF. Excel, Word o TXT</p>
+                                        <input 
+                                            type="file" 
+                                            id="batchInviteInput" 
+                                            hidden 
+                                            accept=".pdf,.docx,.xlsx,.txt"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                
+                                                const btn = e.target.parentElement?.querySelector('p') as HTMLParagraphElement;
+                                                const originalText = btn.innerText;
+                                                btn.innerText = 'Procesando lista con IA...';
+                                                
+                                                const formData = new FormData();
+                                                formData.append('file', file);
+                                                formData.append('courseId', courseId);
+                                                formData.append('courseName', course?.name || '');
+
+                                                try {
+                                                    const res = await fetch('/api/students/batch-invite', { method: 'POST', body: formData });
+                                                    const data = await res.json();
+                                                    if (res.ok) {
+                                                        alert(`¡Carga completada! Se procesaron ${data.processed} de ${data.total} alumnos.`);
+                                                        fetchCourseData();
+                                                    } else {
+                                                        alert('Error en carga masiva: ' + data.error);
+                                                    }
+                                                } catch (err) {
+                                                    alert('Error de conexión');
+                                                } finally {
+                                                    btn.innerText = originalText;
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--secondary)', marginTop: '1rem', lineHeight: 1.5 }}>
+                                        * La IA extraerá nombres, correos y cédulas para crear las cuentas automáticamente.
+                                    </p>
+                                </div>
+                            </div>
                         </section>
 
                         <section className="glass-panel" style={{ overflow: 'hidden', padding: 0 }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                 <thead style={{ background: 'rgba(255,255,255,0.03)', fontSize: '0.8rem', color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                     <tr>
-                                        <th style={{ padding: '1.25rem 2rem' }}>Correo Electrónico</th>
+                                        <th style={{ padding: '1.25rem 2rem' }}>Estudiante</th>
+                                        <th style={{ padding: '1.25rem 2rem' }}>Correo</th>
                                         <th style={{ padding: '1.25rem 2rem' }}>Estado</th>
                                         <th style={{ padding: '1.25rem 2rem' }}>Fecha</th>
                                         <th style={{ padding: '1.25rem 2rem' }}>Acciones</th>
@@ -196,6 +347,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                                 <tbody>
                                     {enrollments.map(enroll => (
                                         <tr key={enroll.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                            <td style={{ padding: '1.25rem 2rem', fontWeight: 500 }}>
+                                                {enroll.id_number ? enroll.id_number : <span style={{ opacity: 0.5, fontSize: '0.8rem' }}>S/C</span>}
+                                            </td>
                                             <td style={{ padding: '1.25rem 2rem', fontWeight: 500 }}>{enroll.student_email}</td>
                                             <td style={{ padding: '1.25rem 2rem' }}>
                                                 {enroll.status === 'active' ? (
@@ -211,14 +365,34 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                                             <td style={{ padding: '1.25rem 2rem', color: 'var(--secondary)', fontSize: '0.9rem' }}>
                                                 {new Date(enroll.enrolled_at).toLocaleDateString()}
                                             </td>
-                                            <td style={{ padding: '1.25rem 2rem' }}>
-                                                <button style={{ background: 'transparent', border: 'none', color: 'var(--secondary)', cursor: 'pointer' }}><MoreVertical size={18} /></button>
-                                            </td>
+                                             <td style={{ padding: '1.25rem 2rem' }}>
+                                                 <div style={{ display: 'flex', gap: '10px' }}>
+                                                     <button 
+                                                         onClick={() => handleDeleteEnrollment(enroll.id)}
+                                                         style={{ 
+                                                             background: 'rgba(239, 68, 68, 0.1)', 
+                                                             border: '1px solid rgba(239, 68, 68, 0.2)', 
+                                                             color: '#ef4444', 
+                                                             padding: '6px', 
+                                                             borderRadius: '8px', 
+                                                             cursor: 'pointer',
+                                                             display: 'flex',
+                                                             alignItems: 'center',
+                                                             justifyContent: 'center',
+                                                             transition: 'all 0.2s'
+                                                         }}
+                                                         title="Borrar invitación"
+                                                     >
+                                                         <Trash2 size={16} />
+                                                     </button>
+                                                     <button style={{ background: 'transparent', border: 'none', color: 'var(--secondary)', cursor: 'pointer' }}><MoreVertical size={18} /></button>
+                                                 </div>
+                                             </td>
                                         </tr>
                                     ))}
                                     {enrollments.length === 0 && (
                                         <tr>
-                                            <td colSpan={4} style={{ padding: '4rem', textAlign: 'center', color: 'var(--secondary)' }}>
+                                            <td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--secondary)' }}>
                                                 Aún no hay estudiantes invitados en este curso.
                                             </td>
                                         </tr>
@@ -231,14 +405,88 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
 
                 {activeTab === 'materials' && (
                     <div className="tab-content fadeIn">
-                        <div style={{ textAlign: 'center', padding: '5rem', border: '2px dashed var(--glass-border)', borderRadius: '24px' }}>
-                            <Upload size={48} color="var(--secondary)" style={{ marginBottom: '1.5rem', opacity: 0.5 }} />
-                            <h3>Gestión de Materiales Inteligentes</h3>
-                            <p style={{ color: 'var(--secondary)', marginBottom: '2rem' }}>Aquí podrás subir PDFs, Office y videos que alimentarán a la IA de esta materia.</p>
-                            <Link href="/dashboard/ai-admin" className="btn-primary" style={{ textDecoration: 'none', padding: '1rem 2rem', display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                                <Sparkles size={18} /> Ir al Ingestor de IA
-                            </Link>
-                        </div>
+                        <section className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', background: 'rgba(255,255,255,0.02)' }}>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Upload size={20} color="var(--primary)" /> Cargar Material de Apoyo
+                            </h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Título del recurso (ej: Guía de Algoritmos)" 
+                                        id="materialTitle"
+                                        style={{ padding: '1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+                                    />
+                                    <textarea 
+                                        placeholder="O pega el contenido aquí..." 
+                                        id="materialContent"
+                                        rows={5}
+                                        style={{ padding: '1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', resize: 'vertical' }}
+                                    ></textarea>
+                                </div>
+                                <div 
+                                    style={{ border: '2px dashed var(--glass-border)', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '2rem', cursor: 'pointer' }}
+                                    onClick={() => document.getElementById('courseFileInput')?.click()}
+                                >
+                                    <Upload size={32} color="var(--secondary)" />
+                                    <p style={{ fontSize: '0.9rem', color: 'var(--secondary)' }}>Subir PDF o Word</p>
+                                    <input 
+                                        type="file" 
+                                        id="courseFileInput" 
+                                        hidden 
+                                        accept=".pdf,.docx,.txt"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const titleInput = document.getElementById('materialTitle') as HTMLInputElement;
+                                                if (!titleInput.value) titleInput.value = file.name.split('.')[0];
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <button 
+                                id="ingestBtn"
+                                onClick={async () => {
+                                    const title = (document.getElementById('materialTitle') as HTMLInputElement).value;
+                                    const content = (document.getElementById('materialContent') as HTMLTextAreaElement).value;
+                                    const fileInput = document.getElementById('courseFileInput') as HTMLInputElement;
+                                    const file = fileInput.files?.[0];
+                                    const btn = document.getElementById('ingestBtn') as HTMLButtonElement;
+
+                                    if (!title) return alert('Por favor ingresa un título');
+                                    if (!content && !file) return alert('Ingresa contenido o sube un archivo');
+
+                                    btn.disabled = true;
+                                    btn.innerText = 'Procesando...';
+
+                                    const formData = new FormData();
+                                    formData.append('title', title);
+                                    formData.append('courseId', courseId);
+                                    if (file) formData.append('file', file);
+                                    if (content) formData.append('content', content);
+
+                                    try {
+                                        const res = await fetch('/api/ingest', { method: 'POST', body: formData });
+                                        const data = await res.json();
+                                        if (res.ok) {
+                                            alert('¡Material cargado con éxito!');
+                                            location.reload();
+                                        } else {
+                                            alert('Error: ' + data.error);
+                                        }
+                                    } catch (err) {
+                                        alert('Error de conexión');
+                                    } finally {
+                                        btn.disabled = false;
+                                        btn.innerText = 'Cargar Material';
+                                    }
+                                }}
+                                style={{ marginTop: '1.5rem', width: '100%', padding: '1rem', borderRadius: '12px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                                Cargar Material
+                            </button>
+                        </section>
                     </div>
                 )}
 

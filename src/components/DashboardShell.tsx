@@ -3,10 +3,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import AiChatWidget from '@/components/AiChatWidget';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
     return (
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+            {/* Top Right Actions */}
+            <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 100, display: 'flex', gap: '1rem' }}>
+                <ThemeToggle />
+            </div>
+
             {/* Main Content Area */}
             <main
                 style={{

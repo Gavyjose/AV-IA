@@ -12,6 +12,7 @@ export default function AiAdminPage() {
     const [content, setContent] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
+    const [file, setFile] = useState<File | null>(null);
 
     const supabase = createClient();
 
@@ -32,23 +33,25 @@ export default function AiAdminPage() {
             setStatus({ type: 'error', message: 'Por favor selecciona un curso.' });
             return;
         }
+        if (!content && !file) {
+            setStatus({ type: 'error', message: 'Por favor ingresa contenido o sube un archivo.' });
+            return;
+        }
+
         setIsLoading(true);
         setStatus({ type: null, message: '' });
 
         try {
-            const selectedCourse = courses.find(c => c.id === courseId);
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('courseId', courseId);
+            if (file) formData.append('file', file);
+            if (content) formData.append('content', content);
+
             const res = await fetch('/api/ingest', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    title, 
-                    content, 
-                    course_id: courseId,
-                    metadata: { 
-                        source: 'teacher_upload',
-                        subject: selectedCourse?.name 
-                    } 
-                }),
+                // Note: Don't set Content-Type header when sending FormData
+                body: formData,
             });
 
             const data = await res.json();
@@ -62,6 +65,7 @@ export default function AiAdminPage() {
             setTitle('');
             setCourseId('');
             setContent('');
+            setFile(null);
         } catch (error: any) {
             setStatus({
                 type: 'error',
@@ -180,29 +184,89 @@ export default function AiAdminPage() {
 
                         <div>
                             <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--secondary)' }}>
-                                CONTENIDO DIDÁCTICO
+                                SOURCE: TEXTO O ARCHIVO
                             </label>
-                            <textarea
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                required
-                                rows={10}
-                                placeholder="Pega aquí el contenido que la IA debe aprender para este curso..."
-                                style={{ 
-                                    width: '100%', 
-                                    padding: '1.25rem', 
-                                    borderRadius: '16px', 
-                                    background: 'rgba(255,255,255,0.03)', 
-                                    border: '1px solid var(--glass-border)',
-                                    color: 'white',
-                                    outline: 'none',
-                                    resize: 'vertical',
-                                    minHeight: '200px',
-                                    fontSize: '1rem',
-                                    lineHeight: '1.6'
-                                }}
-                                className="input-focus"
-                            />
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: file ? '1fr' : '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                {!file && (
+                                    <textarea
+                                        value={content}
+                                        onChange={(e) => setContent(e.target.value)}
+                                        rows={10}
+                                        placeholder="Pega aquí el contenido que la IA debe aprender para este curso..."
+                                        style={{ 
+                                            width: '100%', 
+                                            padding: '1.25rem', 
+                                            borderRadius: '16px', 
+                                            background: 'rgba(255,255,255,0.03)', 
+                                            border: '1px solid var(--glass-border)',
+                                            color: 'white',
+                                            outline: 'none',
+                                            resize: 'vertical',
+                                            minHeight: '200px',
+                                            fontSize: '1rem',
+                                            lineHeight: '1.6'
+                                        }}
+                                        className="input-focus"
+                                    />
+                                )}
+
+                                <div 
+                                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                                    onDragLeave={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--glass-border)'; }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        const droppedFile = e.dataTransfer.files[0];
+                                        if (droppedFile) setFile(droppedFile);
+                                    }}
+                                    style={{ 
+                                        border: '2px dashed var(--glass-border)',
+                                        borderRadius: '16px',
+                                        padding: '2rem',
+                                        textAlign: 'center',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '1rem',
+                                        background: file ? 'rgba(59, 130, 246, 0.05)' : 'rgba(255,255,255,0.02)',
+                                        transition: 'all 0.2s',
+                                        cursor: 'pointer',
+                                        minHeight: file ? 'auto' : '200px'
+                                    }}
+                                    onClick={() => document.getElementById('fileInput')?.click()}
+                                >
+                                    <input 
+                                        id="fileInput"
+                                        type="file" 
+                                        hidden 
+                                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                        accept=".pdf,.docx,.txt"
+                                    />
+                                    {file ? (
+                                        <>
+                                            <div style={{ padding: '10px 15px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--primary)', fontWeight: 700 }}>
+                                                {file.name}
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                                                style={{ fontSize: '0.8rem', color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}
+                                            >
+                                                Quitar archivo
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload size={32} color="var(--secondary)" />
+                                            <div>
+                                                <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Subir PDF o Word</p>
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--secondary)' }}>Arrastra o haz clic para seleccionar</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         <button

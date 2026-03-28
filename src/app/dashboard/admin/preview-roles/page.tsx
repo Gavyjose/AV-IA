@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { GraduationCap, BookOpen, Eye } from 'lucide-react';
 
 // --- STUDENT VIEW (Rendered inline) ---

@@ -32,7 +32,16 @@ const TypingDots = () => (
     </div>
 );
 
-export default function AiChatWidget() {
+import { useParams } from 'next/navigation';
+
+interface AiChatWidgetProps {
+    courseId?: string;
+}
+
+export default function AiChatWidget({ courseId: manualCourseId }: AiChatWidgetProps) {
+    const params = useParams();
+    const courseId = manualCourseId || (params?.id as string);
+    
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
@@ -65,7 +74,10 @@ export default function AiChatWidget() {
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: payload }),
+                body: JSON.stringify({ 
+                    messages: payload,
+                    courseId: courseId // Pass course context if available
+                }),
             });
 
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

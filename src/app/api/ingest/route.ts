@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { getEmbeddings } from '@/lib/embeddings/pipeline';
 import { chunkText } from '@/lib/embeddings/textSplitter';
 import { Database } from '@/lib/supabase/database.types';
+// @ts-ignore
+import pdf from 'pdf-parse';
+import mammoth from 'mammoth';
 
 // Use service role key to bypass RLS for inserting admin data
 const supabase = createClient<Database>(
@@ -12,45 +15,76 @@ const supabase = createClient<Database>(
 
 export async function POST(req: Request) {
     try {
-        const body = await req.json();
-        const { title, content, metadata } = body;
+        const formData = await req.formData();
+        const title = formData.get('title') as string;
+        const courseId = formData.get('courseId') as string;
+        const file = formData.get('file') as File | null;
+        let content = formData.get('content') as string || '';
 
-        if (!title || !content) {
-            return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
+        if (!title || (!content && !file)) {
+            return NextResponse.json({ error: 'Título y contenido (o archivo) son obligatorios' }, { status: 400 });
         }
 
-        // 1. Insert document
-        const { data: document, error: docError } = await supabase
-            .from('documents')
+        // 1. Extract content from file if provided
+        if (file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const fileType = file.name.split('.').pop()?.toLowerCase();
+
+            if (fileType === 'pdf') {
+                try {
+                    const pdfData = await pdf(buffer);
+                    content = pdfData.text;
+                } catch (err: any) {
+                    console.error("PDF Parsing Error:", err);
+                    return NextResponse.json({ error: 'Error al procesar el archivo PDF' }, { status: 400 });
+                }
+            } else if (fileType === 'docx') {
+                const result = await mammoth.extractRawText({ buffer });
+                content = result.value;
+            } else if (fileType === 'txt') {
+                content = buffer.toString('utf-8');
+            } else {
+                return NextResponse.json({ error: 'Tipo de archivo no soportado. Usa PDF, DOCX o TXT.' }, { status: 400 });
+            }
+        }
+
+        if (!content || content.trim().length === 0) {
+            return NextResponse.json({ error: 'No se pudo extraer contenido del archivo o el contenido está vacío' }, { status: 400 });
+        }
+
+        // 2. Insert document
+        const { data: document, error: docError } = await (supabase
+            .from('documents') as any)
             .insert({
                 title,
                 content,
-                metadata: metadata || {}
+                course_id: courseId || null,
+                metadata: { 
+                    source: file ? file.name : 'manual_input',
+                    fileType: file ? file.name.split('.').pop() : 'text'
+                }
             })
             .select()
             .single();
 
         if (docError || !document) throw docError;
 
-        // 2. Chunk text
+        // 3. Chunk text
         const chunks = chunkText(content);
         let insertedChunks = 0;
 
-        // 3. Process chunks sequentially to avoid memory spikes from the local model
+        // 4. Process chunks sequentially
         for (const chunk of chunks) {
-            // Generate embedding locally
             const embeddingVector = await getEmbeddings(chunk);
-            
-            // Format for pgvector as '[0.1, 0.2, ...]' string representation
             const embeddingString = `[${embeddingVector.join(',')}]`;
 
-            // Insert chunk with vector
-            const { error: chunkError } = await supabase
-                .from('document_sections')
+            const { error: chunkError } = await (supabase
+                .from('document_sections') as any)
                 .insert({
                     document_id: document.id,
                     content: chunk,
-                    embedding: embeddingString as any // Override type for pgvector insertion
+                    embedding: embeddingString
                 });
 
             if (chunkError) {
@@ -67,8 +101,8 @@ export async function POST(req: Request) {
             totalChunks: chunks.length
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Ingest API Error:', error);
-        return NextResponse.json({ error: 'Internal server error while processing document' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
     }
 }

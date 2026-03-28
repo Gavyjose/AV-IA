@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Upload, Users, BookOpen, BarChart, MessageSquare, TrendingUp } from 'lucide-react';
 

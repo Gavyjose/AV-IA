@@ -13,8 +13,8 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { messages } = await req.json();
-        console.log('[CHAT] Received messages:', messages?.length);
+        const { messages, courseId } = await req.json();
+        console.log('[CHAT] Received messages:', messages?.length, 'for course:', courseId);
 
         const latestMessage = messages?.[messages.length - 1]?.content;
         if (!latestMessage) {
@@ -31,7 +31,8 @@ export async function POST(req: Request) {
                 query_embedding: embeddingString as any,
                 match_threshold: 0.25,
                 match_count: 5,
-            });
+                p_course_id: courseId || null // New filter parameter
+            } as any);
 
             if (matchedDocuments && (matchedDocuments as any[]).length > 0) {
                 context = (matchedDocuments as any[])

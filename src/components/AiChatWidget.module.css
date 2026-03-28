@@ -43,73 +43,13 @@
     right: 0;
     width: 400px;
     height: 600px;
-    background: white;
+    background: var(--background);
     border-radius: 24px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--glass-shadow);
     border: 1px solid var(--glass-border);
-}
-
-.header {
-    background: var(--primary); /* Generic theme blue */
-    padding: 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: white;
-}
-
-.headerIcon {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 8px;
-    border-radius: 12px;
-    display: flex;
-}
-
-.headerTitle h3 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.onlineStatus {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    opacity: 0.8;
-}
-
-.onlineDot {
-    width: 8px;
-    height: 8px;
-    background: #4ade80;
-    border-radius: 50%;
-}
-
-.headerActions {
-    margin-left: auto;
-    display: flex;
-    gap: 8px;
-}
-
-.headerButton {
-    background: transparent;
-    border: none;
-    color: white;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    display: flex;
-    opacity: 0.7;
-    transition: opacity 0.2s, background 0.2s;
-}
-
-.headerButton:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
 }
 
 .chatContainer {
@@ -119,21 +59,23 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    background: #f8fafc;
+    background: rgba(0, 0, 0, 0.02);
 }
 
-.messageRow {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
+:global(.dark) .chatContainer {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .aiAvatar {
-    background: #e2e8f0;
-    color: #475569;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--secondary);
     padding: 6px;
     border-radius: 10px;
     display: flex;
+}
+
+:global(.dark) .aiAvatar {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .message {
@@ -145,14 +87,14 @@
 }
 
 .aiMessage {
-    background: white;
-    color: #1e293b;
-    border: 1px solid #e2e8f0;
+    background: var(--glass-bg);
+    color: var(--foreground);
+    border: 1px solid var(--glass-border);
     border-top-left-radius: 4px;
 }
 
 .userMessage {
-    background: #004691;
+    background: var(--primary);
     color: white;
     border-top-right-radius: 4px;
 }
@@ -167,17 +109,9 @@
 .dot {
     width: 6px;
     height: 6px;
-    background: #94a3b8;
+    background: var(--secondary);
     border-radius: 50%;
     animation: bounce 1.4s infinite ease-in-out both;
-}
-
-.dot:nth-child(1) { animation-delay: -0.32s; }
-.dot:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1.0); }
 }
 
 .suggestionsContainer {
@@ -189,34 +123,38 @@
 }
 
 .suggestionPill {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     padding: 8px 14px;
     border-radius: 99px;
     font-size: 0.85rem;
-    color: #475569;
+    color: var(--foreground);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .suggestionPill:hover {
-    border-color: #004691;
-    color: #004691;
-    background: rgba(0, 70, 145, 0.05);
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
 }
 
 .inputArea {
     padding: 1.25rem;
-    border-top: 1px solid #e2e8f0;
-    background: white;
+    border-top: 1px solid var(--glass-border);
+    background: var(--background);
 }
 
 .inputWrapper {
-    background: #f1f5f9;
+    background: rgba(0, 0, 0, 0.05);
     padding: 4px;
     border-radius: 14px;
     display: flex;
     align-items: center;
+}
+
+:global(.dark) .inputWrapper {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .input {
@@ -225,14 +163,14 @@
     background: transparent;
     padding: 10px 12px;
     font-size: 0.95rem;
-    color: #1e293b;
+    color: var(--foreground);
     outline: none;
 }
 
 .sendButton {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--secondary);
     padding: 10px;
     border-radius: 10px;
     display: flex;
@@ -241,12 +179,12 @@
 }
 
 .sendButton.active {
-    color: #004691;
+    color: var(--primary);
     cursor: pointer;
 }
 
 .sendButton.active:hover {
-    background: rgba(0, 70, 145, 0.1);
+    background: rgba(59, 130, 246, 0.1);
 }
 
 /* Scrollbar Styles */
@@ -254,6 +192,6 @@
     width: 6px;
 }
 .chatContainer::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
+    background: var(--glass-border);
     border-radius: 10px;
 }
